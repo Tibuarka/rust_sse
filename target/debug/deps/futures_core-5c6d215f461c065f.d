@@ -1,0 +1,11 @@
+/home/femboy/Schreibtisch/Monarch/monarchsse/target/debug/deps/futures_core-5c6d215f461c065f.rmeta: /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/lib.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/future.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/stream.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/mod.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/poll.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/mod.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/atomic_waker.rs
+
+/home/femboy/Schreibtisch/Monarch/monarchsse/target/debug/deps/futures_core-5c6d215f461c065f.d: /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/lib.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/future.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/stream.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/mod.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/poll.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/mod.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/atomic_waker.rs
+
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/lib.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/future.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/stream.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/mod.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/poll.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/mod.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.27/src/task/__internal/atomic_waker.rs:

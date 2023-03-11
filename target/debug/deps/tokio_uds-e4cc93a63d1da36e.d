@@ -1,0 +1,13 @@
+/home/femboy/Schreibtisch/Monarch/monarchsse/target/debug/deps/tokio_uds-e4cc93a63d1da36e.rmeta: /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/lib.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/datagram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/frame.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/incoming.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/listener.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/recv_dgram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/send_dgram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/stream.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/ucred.rs
+
+/home/femboy/Schreibtisch/Monarch/monarchsse/target/debug/deps/tokio_uds-e4cc93a63d1da36e.d: /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/lib.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/datagram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/frame.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/incoming.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/listener.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/recv_dgram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/send_dgram.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/stream.rs /home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/ucred.rs
+
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/lib.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/datagram.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/frame.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/incoming.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/listener.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/recv_dgram.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/send_dgram.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/stream.rs:
+/home/femboy/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-uds-0.2.7/src/ucred.rs:

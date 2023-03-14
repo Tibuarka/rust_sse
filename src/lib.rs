@@ -5,6 +5,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio;
+use futures::Join;
 use hyper::body::Sender;
 use hyper::client::service;
 use hyper::server::conn::AddrStream;
@@ -14,8 +15,9 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::sync::Mutex;
-use std::time::Instant;
+use std::sync::{Mutex, Arc};
+use std::thread::{self, JoinHandle};
+use std::time::{Instant, Duration};
 
 #[derive(Debug)]
 pub struct Client{
@@ -31,7 +33,7 @@ impl Client{
 
 type Channel = Vec<Client>;
 type Channels = HashMap<String, Channel>;
-
+#[derive(Debug)]
 pub struct EventServer{
     channels: Mutex<Channels>,
     next_id: i32,

@@ -65,6 +65,7 @@ impl EventServer{
         if let Err(e) = server.await {
             eprintln!("server error: {}", e);
         }
+        //finished for now
     }
 
     fn add_client(&self,channel: &str, sender: Sender){

@@ -11,6 +11,7 @@ use hyper::client::service;
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server};
+use serde_json::from_str;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;
@@ -92,7 +93,8 @@ impl EventServer{
     }
 
     pub async fn create_stream(&self, req: Request<Body>) -> Response<Body>{
-        let channel = "tokens";
+        // Extract channel from uri path (last segment)
+        let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
         println!("Connection accepted");
         let (sender, body) = Body::channel();
         self.add_client(channel, sender);

@@ -10,7 +10,7 @@ use hyper::body::Sender;
 use hyper::client::service;
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
-use hyper::{Body, Request, Response, Server};
+use hyper::{Body, Request, Response, Server, StatusCode};
 use serde_json::from_str;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -37,14 +37,14 @@ type Channels = HashMap<String, Channel>;
 #[derive(Debug)]
 pub struct EventServer{
     channels: Mutex<Channels>,
-    next_id: i32,
+    id_storage: Mutex<Vec<i32>>,
 }
 
 impl EventServer{
     pub fn summon() -> EventServer{
         EventServer{
             channels: Mutex::new(HashMap::new()),
-            next_id: 0
+            id_storage: Mutex::new(vec![])
         }
     }
 
@@ -69,13 +69,24 @@ impl EventServer{
         //finished for now
     }
 
-    fn add_client(&self,channel: &str, sender: Sender){
-        match self.channels.lock().expect("Could not open channel lock").entry(channel.to_owned()) {
+    pub fn register_channel(&self, channel: &str){
+        let mut channels = self.channels.lock().expect("Could not open channel lock");
+        channels.insert(channel.to_owned(), Vec::new());
+        println!("{:?}", channels);
+    }
+
+    fn add_client(&self,channel: &str, sender: Sender) -> bool{
+        let mut channels = self.channels.lock().expect("Could not open channel lock");
+        if !channels.contains_key(channel) {
+            return false
+        }
+        let available_id = self.assign_id();
+        match channels.entry(channel.to_owned()) {
             Entry::Occupied(mut e) => {
                 e.get_mut().push(
                     Client{
                         sender,
-                        id: 514,
+                        id: available_id,
                         first_error: None
                     }
                 )
@@ -84,20 +95,37 @@ impl EventServer{
                 e.insert(Vec::new()).push(
                     Client{
                         sender,
-                        id: 514,
+                        id: available_id,
                         first_error: None
                     }
                 )
             }
         }
+        true
+    }
+
+    fn assign_id(&self) -> i32{
+        let mut lowest = 1;
+        let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
+        while id_storage.contains(&lowest){
+            lowest += 1;
+        }
+        id_storage.push(lowest);
+        lowest
     }
 
     pub async fn create_stream(&self, req: Request<Body>) -> Response<Body>{
         // Extract channel from uri path (last segment)
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
-        println!("Connection accepted");
+        // println!("Connection accepted");
         let (sender, body) = Body::channel();
-        self.add_client(channel, sender);
+        let result = self.add_client(channel, sender);
+        if !result {
+            return Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::empty())
+                    .expect("Could not create response");
+        }
         println!("{:?}", self.channels);
 
         Response::builder()

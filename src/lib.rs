@@ -5,20 +5,16 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio;
-use futures::Join;
 use hyper::body::Sender;
-use hyper::client::service;
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server, StatusCode};
-use serde_json::from_str;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::sync::{Mutex, Arc};
-use std::thread::{self, JoinHandle};
-use std::time::{Instant, Duration};
+use std::sync::{Mutex};
+use std::time::{Instant};
 
 #[derive(Debug)]
 pub struct Client{

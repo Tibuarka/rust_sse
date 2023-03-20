@@ -5,7 +5,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate tokio;
-use hyper::body::Sender;
+use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server, StatusCode};
@@ -24,7 +24,15 @@ pub struct Client{
 }
 
 impl Client{
-    fn send_chunk(&mut self){}
+    fn send_chunk(&mut self, chunk: Bytes){
+        let result = self.sender.send_data(chunk);
+
+        match (&result, self.first_error){
+            (Err(_), None) => {
+                self.first_error = Some(Instant::now());
+            }
+        }
+    }
 }
 
 
@@ -98,6 +106,27 @@ impl EventServer{
             }
         }
         true
+    }
+
+    pub fn send_to_channel(&self, channel: &str, event: &str, message: &str){
+        let mut channels = self.channels.lock().unwrap();
+
+        match channels.get_mut(channel) {
+            Some(clients) => {
+                for client in clients.iter_mut() {
+                    let chunk = Bytes::from(chunk.clone());
+                    client.send_chunk(chunk).ok();
+                }
+            }
+            None => {} // Currently no clients on the given channel
+        };
+    }
+
+    pub fn send_to_all_channels(&self, channel: &str, event: &str, message: &str){
+        let channels = self.channels.lock().expect("Could not open Channel lock");
+        for channel in channels.keys() {
+            self.send_to_channel(channel, event, message);
+        }
     }
 
     fn assign_id(&self) -> i32{

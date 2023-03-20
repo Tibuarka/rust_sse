@@ -24,14 +24,20 @@ pub struct Client{
 }
 
 impl Client{
-    fn send_chunk(&mut self, chunk: Bytes){
-        let result = self.sender.send_data(chunk);
+    fn send_chunk(&mut self, chunk: Bytes) -> Result<(), Bytes>{
+        let result = self.sender.try_send_data(chunk);
 
         match (&result, self.first_error){
             (Err(_), None) => {
                 self.first_error = Some(Instant::now());
             }
+            (Ok(_), Some(_)) => {
+                // Clear error when write succeeds
+                self.first_error = None;
+            }
+            _ => {}
         }
+        result
     }
 }
 
@@ -110,11 +116,12 @@ impl EventServer{
 
     pub fn send_to_channel(&self, channel: &str, event: &str, message: &str){
         let mut channels = self.channels.lock().unwrap();
+        let payload = format!("event: {}\ndata: {}\n\n", event, message);
 
         match channels.get_mut(channel) {
             Some(clients) => {
                 for client in clients.iter_mut() {
-                    let chunk = Bytes::from(chunk.clone());
+                    let chunk = Bytes::from(payload.clone());
                     client.send_chunk(chunk).ok();
                 }
             }

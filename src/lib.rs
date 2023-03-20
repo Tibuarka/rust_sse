@@ -129,7 +129,7 @@ impl EventServer{
         };
     }
 
-    pub fn send_to_all_channels(&self, channel: &str, event: &str, message: &str){
+    pub fn send_to_all_channels(&self, event: &str, message: &str){
         let channels = self.channels.lock().expect("Could not open Channel lock");
         for channel in channels.keys() {
             self.send_to_channel(channel, event, message);

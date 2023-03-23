@@ -9,12 +9,13 @@ use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server, StatusCode};
+use tokio::time::{Interval, interval};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::{Mutex};
-use std::time::{Instant};
+use std::time::{Instant, Duration};
 
 #[derive(Debug)]
 pub struct Client{
@@ -133,6 +134,14 @@ impl EventServer{
         let channels = self.channels.lock().expect("Could not open Channel lock");
         for channel in channels.keys() {
             self.send_to_channel(channel, event, message);
+        }
+    }
+
+    pub async fn maintenance(&self, t: u64){
+        let mut tick = interval(Duration::from_secs(t));
+        loop {
+            tick.tick().await;
+            self.send_to_all_channels("heartbeat", "");
         }
     }
 

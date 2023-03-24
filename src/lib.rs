@@ -89,6 +89,7 @@ impl EventServer{
         let mut channels = self.channels.lock().expect("Could not open channel lock");
         println!("{:?}", self.channels);
         if !channels.contains_key(channel) {
+            println!("Channel not found");
             return false
         }
         let available_id = self.assign_id();
@@ -148,17 +149,26 @@ impl EventServer{
 
     fn remove_stale_clients(&self){
         let mut channel_mutex = self.channels.lock().unwrap();
-        channel_mutex.retain(|_, clients| {
-            clients.retain(|client|{
-                if let Some(first_error) = client.first_error{
+        println!("{:?}", channel_mutex);
+        for (_, clients) in channel_mutex.iter_mut() {
+            clients.retain(|client| {
+                if let Some(first_error) = client.first_error {
+                    println!("Client error");
                     if first_error.elapsed() > Duration::from_secs(5) {
-                        return false
+                        let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
+                        id_storage.retain(|&stored_id| stored_id != client.id);
+                        return false;
                     }
                 }
                 true
-            });
-            !clients.is_empty()
-        });
+            })
+            // for client in clients{
+            //     if let Some(first_error) = client.first_error {
+            //         if first_error.elapsed() > Duration::from_secs(5) {
+            //         }
+            //     }
+            // }
+        }
         drop(channel_mutex);
     }
 

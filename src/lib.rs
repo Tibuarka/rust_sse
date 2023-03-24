@@ -83,11 +83,11 @@ impl EventServer{
     pub fn register_channel(&self, channel: &str){
         let mut channels = self.channels.lock().expect("Could not open channel lock");
         channels.insert(channel.to_owned(), Vec::new());
-        println!("{:?}", channels);
     }
 
     fn add_client(&self,channel: &str, sender: Sender) -> bool{
         let mut channels = self.channels.lock().expect("Could not open channel lock");
+        println!("{:?}", self.channels);
         if !channels.contains_key(channel) {
             return false
         }
@@ -112,6 +112,7 @@ impl EventServer{
                 )
             }
         }
+        println!("{:?}", channels);
         true
     }
 
@@ -128,19 +129,44 @@ impl EventServer{
             }
             None => {} // Currently no clients on the given channel
         };
+        drop(channels);
     }
 
     pub fn send_to_all_channels(&self, event: &str, message: &str){
-        let channels = self.channels.lock().expect("Could not open Channel lock");
-        for channel in channels.keys() {
-            self.send_to_channel(channel, event, message);
+        let channels = self.get_channels();
+        for channel in channels {
+            self.send_to_channel(&channel, event, message);
         }
+    }
+
+    fn get_channels(&self) -> Vec<String> {
+        let channel_mutex = self.channels.lock().unwrap();
+        let channel_vector: Vec<String> = channel_mutex.keys().map(|ch| ch.to_owned()).collect();
+        drop(channel_mutex);
+        channel_vector
+    }
+
+    fn remove_stale_clients(&self){
+        let mut channel_mutex = self.channels.lock().unwrap();
+        channel_mutex.retain(|_, clients| {
+            clients.retain(|client|{
+                if let Some(first_error) = client.first_error{
+                    if first_error.elapsed() > Duration::from_secs(5) {
+                        return false
+                    }
+                }
+                true
+            });
+            !clients.is_empty()
+        });
+        drop(channel_mutex);
     }
 
     pub async fn maintenance(&self, t: u64){
         let mut tick = interval(Duration::from_secs(t));
         loop {
             tick.tick().await;
+            self.remove_stale_clients();
             self.send_to_all_channels("heartbeat", "");
         }
     }
@@ -158,16 +184,15 @@ impl EventServer{
     pub async fn create_stream(&self, req: Request<Body>) -> Response<Body>{
         // Extract channel from uri path (last segment)
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
-        // println!("Connection accepted");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
         if !result {
+            println!("Could not add client");
             return Response::builder()
                     .status(StatusCode::BAD_REQUEST)
                     .body(Body::empty())
                     .expect("Could not create response");
         }
-        println!("{:?}", self.channels);
 
         Response::builder()
             .header("Cache-Control", "no-cache")

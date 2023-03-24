@@ -87,9 +87,7 @@ impl EventServer{
 
     fn add_client(&self,channel: &str, sender: Sender) -> bool{
         let mut channels = self.channels.lock().expect("Could not open channel lock");
-        println!("{:?}", self.channels);
         if !channels.contains_key(channel) {
-            println!("Channel not found");
             return false
         }
         let available_id = self.assign_id();
@@ -113,7 +111,7 @@ impl EventServer{
                 )
             }
         }
-        println!("{:?}", channels);
+        // println!("{:?}", channels);
         true
     }
 
@@ -149,11 +147,10 @@ impl EventServer{
 
     fn remove_stale_clients(&self){
         let mut channel_mutex = self.channels.lock().unwrap();
-        println!("{:?}", channel_mutex);
+        // println!("{:?}", channel_mutex);
         for (_, clients) in channel_mutex.iter_mut() {
             clients.retain(|client| {
                 if let Some(first_error) = client.first_error {
-                    println!("Client error");
                     if first_error.elapsed() > Duration::from_secs(5) {
                         let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
                         id_storage.retain(|&stored_id| stored_id != client.id);
@@ -162,12 +159,6 @@ impl EventServer{
                 }
                 true
             })
-            // for client in clients{
-            //     if let Some(first_error) = client.first_error {
-            //         if first_error.elapsed() > Duration::from_secs(5) {
-            //         }
-            //     }
-            // }
         }
         drop(channel_mutex);
     }
@@ -197,7 +188,6 @@ impl EventServer{
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
         if !result {
-            println!("Could not add client");
             return Response::builder()
                     .status(StatusCode::BAD_REQUEST)
                     .body(Body::empty())

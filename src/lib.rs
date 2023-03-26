@@ -138,7 +138,6 @@ impl EventServer{
 
     fn remove_stale_clients(&self){
         let mut channel_mutex = self.channels.lock().unwrap();
-        // println!("{:?}", channel_mutex);
         for (_, clients) in channel_mutex.iter_mut() {
             clients.retain(|client| {
                 if let Some(first_error) = client.first_error {

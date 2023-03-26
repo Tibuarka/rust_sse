@@ -4,12 +4,12 @@ use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server, StatusCode};
-use tokio::time::{interval};
+use tokio::time::interval;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use std::sync::{Mutex};
+use std::sync::Mutex;
 use std::time::{Instant, Duration};
 
 #[derive(Debug)]
@@ -28,7 +28,6 @@ impl Client{
                 self.first_error = Some(Instant::now());
             }
             (Ok(_), Some(_)) => {
-                // Clear error when write succeeds
                 self.first_error = None;
             }
             _ => {}
@@ -50,7 +49,7 @@ impl EventServer{
     pub fn summon() -> EventServer{
         EventServer{
             channels: Mutex::new(HashMap::new()),
-            id_storage: Mutex::new(vec![])
+            id_storage: Mutex::new(Vec::new())
         }
     }
 
@@ -68,11 +67,9 @@ impl EventServer{
         let server = Server::bind(&addr)
         .serve(sse_handler);
 
-        // Finally, spawn `server` onto an Executor...
         if let Err(e) = server.await {
             eprintln!("server error: {}", e);
         }
-        //finished for now
     }
 
     pub fn register_channel(&self, channel: &str){
@@ -106,7 +103,6 @@ impl EventServer{
                 )
             }
         }
-        // println!("{:?}", channels);
         true
     }
 
@@ -121,7 +117,7 @@ impl EventServer{
                     client.send_chunk(chunk).ok();
                 }
             }
-            None => {} // Currently no clients on the given channel
+            None => {}
         };
         drop(channels);
     }
@@ -178,7 +174,6 @@ impl EventServer{
     }
 
     pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
-        // Extract channel from uri path (last segment)
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);

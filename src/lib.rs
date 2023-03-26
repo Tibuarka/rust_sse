@@ -65,7 +65,7 @@ impl EventServer{
         let sse_handler = make_service_fn(|_socket: &AddrStream| {
             async move {
                 Ok::<_,Infallible>(service_fn(move |req: Request<Body>| async move {
-                    Ok::<_,Infallible>(self.create_stream(req).await)
+                    Ok::<_,Infallible>(self.create_stream(req))
                 }))
             }
         });
@@ -182,7 +182,7 @@ impl EventServer{
         lowest
     }
 
-    pub async fn create_stream(&self, req: Request<Body>) -> Response<Body>{
+    pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
         // Extract channel from uri path (last segment)
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();

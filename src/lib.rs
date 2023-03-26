@@ -9,7 +9,7 @@ use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
 use hyper::{Body, Request, Response, Server, StatusCode};
-use tokio::time::{Interval, interval};
+use tokio::time::{interval};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::convert::Infallible;

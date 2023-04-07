@@ -1,5 +1,3 @@
-extern crate hyper;
-extern crate tokio;
 use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
@@ -20,7 +18,7 @@ pub struct Client{
 }
 
 impl Client{
-    fn send_chunk(&mut self, chunk: Bytes) -> Result<(), Bytes>{
+    fn send_chunk(&mut self, chunk: Bytes){
         let result = self.sender.try_send_data(chunk);
 
         match (&result, self.first_error){
@@ -32,10 +30,8 @@ impl Client{
             }
             _ => {}
         }
-        result
     }
 }
-
 
 type Channel = Vec<Client>;
 type Channels = HashMap<String, Channel>;
@@ -53,8 +49,8 @@ impl EventServer{
         }
     }
 
-    pub async fn spawn(&'static self){
-        let addr = SocketAddr::from(([0, 0, 0, 0], 22717));
+    pub async fn spawn(&'static self, port: u16){
+        let addr = SocketAddr::from(([0, 0, 0, 0], port));
         
         let sse_handler = make_service_fn(|_socket: &AddrStream| {
             async move {
@@ -77,18 +73,17 @@ impl EventServer{
         channels.insert(channel.to_owned(), Vec::new());
     }
 
-    fn add_client(&self,channel: &str, sender: Sender) -> bool{
+    fn add_client(&self,channel: &str, sender: Sender) -> Result<bool, &str>{
         let mut channels = self.channels.lock().expect("Could not open channel lock");
         if !channels.contains_key(channel) {
-            return false
+            return Err("Channel nonexistent")
         }
-        let available_id = self.assign_id();
         match channels.entry(channel.to_owned()) {
             Entry::Occupied(mut e) => {
                 e.get_mut().push(
                     Client{
                         sender,
-                        id: available_id,
+                        id: self.assign_id(),
                         first_error: None
                     }
                 )
@@ -97,13 +92,13 @@ impl EventServer{
                 e.insert(Vec::new()).push(
                     Client{
                         sender,
-                        id: available_id,
+                        id: self.assign_id(),
                         first_error: None
                     }
                 )
             }
         }
-        true
+        Ok(true)
     }
 
     pub fn send_to_channel(&self, channel: &str, event: &str, message: &str){
@@ -114,7 +109,7 @@ impl EventServer{
             Some(clients) => {
                 for client in clients.iter_mut() {
                     let chunk = Bytes::from(payload.clone());
-                    client.send_chunk(chunk).ok();
+                    client.send_chunk(chunk);
                 }
             }
             None => {}
@@ -176,11 +171,15 @@ impl EventServer{
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
-        if !result {
-            return Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .body(Body::empty())
-                    .expect("Could not create response");
+        match result {
+            Ok(_) => {},
+            Err(err) => {
+                dbg!("Create Stream threw an Error: {:?}", err);
+                return Response::builder()
+                        .status(StatusCode::BAD_REQUEST)
+                        .body(Body::empty())
+                        .expect("Could not create response");
+            }
         }
 
         Response::builder()

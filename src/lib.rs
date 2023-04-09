@@ -1,3 +1,7 @@
+//! Minimalist Server-Sent Event Library\
+//! This library is intended to be used with warp as the examples will show.\
+//! This crate will not be maintained and the source code can be found on GitHub: <https://github.com/Tibuarka/rust_sse>
+
 use hyper::body::{Sender, Bytes};
 use hyper::server::conn::AddrStream;
 use hyper::service::{service_fn, make_service_fn};
@@ -10,6 +14,12 @@ use std::net::SocketAddr;
 use std::sync::Mutex;
 use std::time::{Instant, Duration};
 
+
+/// A struct representing a connected client
+/// # Arguments
+/// * `sender` - A Sender struct by hyper
+/// * `id` - A unique id for a connected client
+/// * `first_error` - When a client cannot recieve an event the time will be saved for maintenance
 #[derive(Debug)]
 pub struct Client{
     sender: hyper::body::Sender,
@@ -18,6 +28,10 @@ pub struct Client{
 }
 
 impl Client{
+    /// Sends an event as a chunk of bytes to a client
+    /// # Arguments
+    /// * `chunk` - the event formatted as a chunk of bytes
+    /// If an error occurs the timestamp will be saved to the client for the maintenance function of the EventServer
     fn send_chunk(&mut self, chunk: Bytes){
         let result = self.sender.try_send_data(chunk);
 
@@ -32,9 +46,16 @@ impl Client{
         }
     }
 }
-
+/// Represents a Vector of Client structs
 type Channel = Vec<Client>;
+/// Represents a HashMap with channels and their respective Client vector
 type Channels = HashMap<String, Channel>;
+/// A hyper HTTP server for handling Server-Sent Events
+/// # Arguments
+/// * `channels` - a HashMap with channels which contain a vector with Client structs
+/// * `id_storage` - a vector with IDs for Clients
+/// # Notes
+/// The server automatically gives out the lowest available ID to a Client and removes it from the vector if a Client is removed 
 #[derive(Debug)]
 pub struct EventServer{
     channels: Mutex<Channels>,
@@ -42,16 +63,19 @@ pub struct EventServer{
 }
 
 impl EventServer{
+    /// Returns an EventServer
     pub fn summon() -> EventServer{
         EventServer{
             channels: Mutex::new(HashMap::new()),
             id_storage: Mutex::new(Vec::new())
         }
     }
-
+    /// Starts the server
+    /// # Arguments
+    /// * `port` - the specified port the server runs on
     pub async fn spawn(&'static self, port: u16){
+        // Binds the specified port to a socket address
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
-        
         let sse_handler = make_service_fn(|_socket: &AddrStream| {
             async move {
                 Ok::<_,Infallible>(service_fn(move |req: Request<Body>| async move {
@@ -59,76 +83,110 @@ impl EventServer{
                 }))
             }
         });
-
-        let server = Server::bind(&addr)
-        .serve(sse_handler);
-
+        let server = Server::bind(&addr).serve(sse_handler);
         if let Err(e) = server.await {
             eprintln!("server error: {}", e);
         }
     }
 
+    /// Adds a channel into the event server channel storage
+    /// # Arguments
+    /// * `channel` - a specific singular eventsource channel
     pub fn register_channel(&self, channel: &str){
-        let mut channels = self.channels.lock().expect("Could not open channel lock");
-        channels.insert(channel.to_owned(), Vec::new());
+        let channels = self.channels.lock();
+        match channels {
+            Ok(mut channels) => {
+                channels.insert(channel.to_owned(), Vec::new());
+            }
+            Err(_) => { eprintln!("Could not open channel lock"); }
+        }
     }
 
-    fn add_client(&self,channel: &str, sender: Sender) -> Result<bool, &str>{
-        let mut channels = self.channels.lock().expect("Could not open channel lock");
-        if !channels.contains_key(channel) {
-            return Err("Channel nonexistent")
-        }
-        match channels.entry(channel.to_owned()) {
-            Entry::Occupied(mut e) => {
-                e.get_mut().push(
-                    Client{
-                        sender,
-                        id: self.assign_id(),
-                        first_error: None
-                    }
-                )
-            }
-            Entry::Vacant(e) => {
-                e.insert(Vec::new()).push(
-                    Client{
-                        sender,
-                        id: self.assign_id(),
-                        first_error: None
-                    }
-                )
-            }
-        }
-        Ok(true)
-    }
-
-    pub fn send_to_channel(&self, channel: &str, event: &str, message: &str){
-        let mut channels = self.channels.lock().unwrap();
-        let payload = format!("event: {}\ndata: {}\n\n", event, message);
-
-        match channels.get_mut(channel) {
-            Some(clients) => {
-                for client in clients.iter_mut() {
-                    let chunk = Bytes::from(payload.clone());
-                    client.send_chunk(chunk);
+    /// Adds a client to a channel
+    /// # Arguments
+    // * `channel` - the channel of the EventSource
+    // * `sender` - the Sender struct from hyper
+    fn add_client(&self, channel: &str, sender: Sender) -> Result<bool, &str>{
+        let channels = self.channels.lock();
+        match channels {
+            Ok(mut channels) => {
+                if !channels.contains_key(channel) {
+                    return Err("Channel nonexistent")
                 }
+                match channels.entry(channel.to_owned()) {
+                    Entry::Occupied(mut e) => {
+                        e.get_mut().push(
+                            Client{
+                                sender,
+                                id: self.assign_id(),
+                                first_error: None
+                            }
+                        )
+                    }
+                    Entry::Vacant(e) => {
+                        e.insert(Vec::new()).push(
+                            Client{
+                                sender,
+                                id: self.assign_id(),
+                                first_error: None
+                            }
+                        )
+                    }
+                }
+                Ok(true)
             }
-            None => {}
-        };
-        drop(channels);
+            Err(_) => { return Err("Could not open channel lock") }
+        }
     }
 
+    /// Send an event to a singular channel
+    /// # Arguments
+    /// * `channel` - a specific singular eventsource channel
+    pub fn send_to_channel(&self, channel: &str, event: &str, message: &str){
+        let channels = self.channels.lock();
+        match channels {
+            Ok(mut channels) => {
+                let payload = format!("event: {}\ndata: {}\n\n", event, message);
+                match channels.get_mut(channel) {
+                    Some(clients) => {
+                        for client in clients.iter_mut() {
+                            let chunk = Bytes::from(payload.clone());
+                            client.send_chunk(chunk);
+                        }
+                    }
+                    None => {}
+                };
+            }
+            Err(_) => { eprintln!("Could not open channel lock"); }
+        }
+    }
+
+    /// Send an event to all registered channels
+    /// # Arguments
+    /// * `event` - the event type
+    /// * `message` - the data for the event
     pub fn send_to_all_channels(&self, event: &str, message: &str){
         let channels = self.get_channels();
-        for channel in channels {
-            self.send_to_channel(&channel, event, message);
+        match channels {
+            Ok(channels) => {
+                for channel in channels {
+                    self.send_to_channel(&channel, event, message);
+                }
+            }
+            Err(_) => { eprintln!("Could not get channels"); }
         }
     }
 
-    fn get_channels(&self) -> Vec<String> {
-        let channel_mutex = self.channels.lock().unwrap();
-        let channel_vector: Vec<String> = channel_mutex.keys().map(|ch| ch.to_owned()).collect();
-        drop(channel_mutex);
-        channel_vector
+    fn get_channels(&self) -> Result<Vec<String>, &str> {
+        let channel_mutex = self.channels.lock();
+        match channel_mutex {
+            Ok(channel_mutex) => {
+                let channel_vector: Vec<String> = channel_mutex.keys().map(|ch| ch.to_owned()).collect();
+                drop(channel_mutex);
+                Ok(channel_vector)
+            },
+            Err(_) => { return Err("Could not open channel lock") }
+        }
     }
 
     fn remove_stale_clients(&self){
@@ -145,11 +203,12 @@ impl EventServer{
                 true
             })
         }
-        drop(channel_mutex);
     }
-
-    pub async fn maintenance(&self, t: u64){
-        let mut tick = interval(Duration::from_secs(t));
+    /// Regular maintenance of Clients based on a specified interval
+    /// # Arguments
+    /// * `delay` - specified interval in seconds
+    pub async fn maintenance(&self, delay: u64){
+        let mut tick = interval(Duration::from_secs(delay));
         loop {
             tick.tick().await;
             self.remove_stale_clients();
@@ -167,7 +226,7 @@ impl EventServer{
         lowest
     }
 
-    pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
+    fn create_stream(&self, req: Request<Body>) -> Response<Body>{
         let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);

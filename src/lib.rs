@@ -70,7 +70,7 @@ impl EventServer{
             id_storage: Mutex::new(Vec::new())
         }
     }
-    /// Starts the server
+    /// Starts the server as a seperate http server
     /// # Arguments
     /// * `port` - the specified port the server runs on
     pub async fn spawn(&'static self, port: u16){
@@ -113,12 +113,18 @@ impl EventServer{
                 if !channels.contains_key(channel) {
                     return Err("Channel nonexistent")
                 }
+
+                let client_id = self.assign_id();
+                if client_id == 0 {
+                    return Err("Could not assign ID to Client");
+                }
+                
                 match channels.entry(channel.to_owned()) {
                     Entry::Occupied(mut e) => {
                         e.get_mut().push(
                             Client{
                                 sender,
-                                id: self.assign_id(),
+                                id: client_id,
                                 first_error: None
                             }
                         )
@@ -127,7 +133,7 @@ impl EventServer{
                         e.insert(Vec::new()).push(
                             Client{
                                 sender,
-                                id: self.assign_id(),
+                                id: client_id,
                                 first_error: None
                             }
                         )
@@ -190,18 +196,23 @@ impl EventServer{
     }
 
     fn remove_stale_clients(&self){
-        let mut channel_mutex = self.channels.lock().unwrap();
-        for (_, clients) in channel_mutex.iter_mut() {
-            clients.retain(|client| {
-                if let Some(first_error) = client.first_error {
-                    if first_error.elapsed() > Duration::from_secs(5) {
-                        let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
-                        id_storage.retain(|&stored_id| stored_id != client.id);
-                        return false;
-                    }
+        let channel_mutex = self.channels.lock();
+        match channel_mutex {
+            Ok(mut channel_mutex) => {
+                for (_, clients) in channel_mutex.iter_mut() {
+                    clients.retain(|client| {
+                        if let Some(first_error) = client.first_error {
+                            if first_error.elapsed() > Duration::from_secs(5) {
+                                let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
+                                id_storage.retain(|&stored_id| stored_id != client.id);
+                                return false;
+                            }
+                        }
+                        true
+                    })
                 }
-                true
-            })
+            },
+            Err(_) => { eprintln!("Could not open channel lock"); },
         }
     }
     /// Regular maintenance of Clients based on a specified interval
@@ -212,28 +223,33 @@ impl EventServer{
         loop {
             tick.tick().await;
             self.remove_stale_clients();
-            self.send_to_all_channels("heartbeat", "");
+            self.send_to_all_channels("heartbeat", "update");
         }
     }
 
     fn assign_id(&self) -> i32{
         let mut lowest = 1;
-        let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
-        while id_storage.contains(&lowest){
-            lowest += 1;
+        let id_storage = self.id_storage.lock();
+        match id_storage {
+            Ok(mut id_storage) => {
+                while id_storage.contains(&lowest){
+                    lowest += 1;
+                }
+                id_storage.push(lowest);
+                lowest
+            },
+            Err(_) => { eprintln!("Could not open ID storage"); return 0 /* 0 is synonymous with an error as the lowest id there can be is 1 */ },
         }
-        id_storage.push(lowest);
-        lowest
     }
 
-    fn create_stream(&self, req: Request<Body>) -> Response<Body>{
-        let channel = req.uri().path().rsplit("/").next().expect("Could not get Channel Path");
+    pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
+        let channel = req.uri().path().rsplit("/").last().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
         match result {
             Ok(_) => {},
             Err(err) => {
-                dbg!("Create Stream threw an Error: {:?}", err);
+                eprintln!("Create_Stream threw an Error: {:?}", err);
                 return Response::builder()
                         .status(StatusCode::BAD_REQUEST)
                         .body(Body::empty())

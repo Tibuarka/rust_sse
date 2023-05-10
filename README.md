@@ -5,6 +5,7 @@ This is a library to implement server-sent events in a web application project. 
 ```rust
 // Standalone HTTP server
 TODO
+---
 // Integrated into axum with custom route handler
 #[tokio::main]
 async fn main() {
@@ -24,6 +25,7 @@ async fn main() {
 async fn event_handler(req: Request<Body>) -> Response<Body> {
     SSE.create_stream(req)
 }
+---
 ```
 
 ## WARNING

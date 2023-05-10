@@ -31,4 +31,4 @@ async fn event_handler(req: Request<Body>) -> Response<Body> {
 ## WARNING
 - This is my _first_ rust project so this code is by no means stable and/or good! Feel free to modify it to suit your needs
 - I will not accept pull requests because the amount of knowledge about rust that I have is not enough to correctly decide over your proposed changes
-- There is a high chance that I will not maintain this library so use with care
+- There is a high chance that I will not maintain this library so use with care (currently a blatant lie :P)

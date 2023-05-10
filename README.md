@@ -3,7 +3,26 @@ This is a library to implement server-sent events in a web application project. 
 
 ## Examples
 ```rust
+// Standalone HTTP server
+TODO
+// Integrated into axum with custom route handler
+#[tokio::main]
+async fn main() {
+    // Let the maintenance run seperately
+    task::spawn(async {
+            SSE.maintenance(1).await;
+        });
 
+    // Moves the request to the SSE handler
+    let app = Router::new().route("/event/:event",get({ move |req| event_handler(req) }));
+
+    // Start the server on port 8082
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8082));
+    axum::Server::bind(&addr).serve(app.into_make_service()).await.expect("Failed starting the server");
+}
+async fn event_handler(req: Request<Body>) -> Response<Body> {
+    SSE.create_stream(req)
+}
 ```
 
 ## WARNING

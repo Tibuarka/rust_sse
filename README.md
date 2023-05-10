@@ -2,11 +2,12 @@
 This is a library to implement server-sent events in a web application project. The library can be used to start a seperate dedicated http server which handels SSEs or can be used with your custom handlers with the axum web framework (I did not get it to work with other frameworks).
 
 ## Examples
+### Standalone HTTP server
 ```rust
-// Standalone HTTP server
 TODO
----
-// Integrated into axum with custom route handler
+```
+### Integrated into axum with custom route handler
+```rust
 #[tokio::main]
 async fn main() {
     // Let the maintenance run seperately
@@ -25,7 +26,6 @@ async fn main() {
 async fn event_handler(req: Request<Body>) -> Response<Body> {
     SSE.create_stream(req)
 }
----
 ```
 
 ## WARNING

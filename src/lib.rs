@@ -35,7 +35,7 @@ impl Client{
     fn send_chunk(&mut self, chunk: Bytes){
         let result = self.sender.try_send_data(chunk);
 
-        match (&result, self.first_error){
+        match (result, self.first_error){
             (Err(_), None) => {
                 self.first_error = Some(Instant::now());
             }
@@ -203,9 +203,14 @@ impl EventServer{
                     clients.retain(|client| {
                         if let Some(first_error) = client.first_error {
                             if first_error.elapsed() > Duration::from_secs(5) {
-                                let mut id_storage = self.id_storage.lock().expect("Could not open ID lock");
-                                id_storage.retain(|&stored_id| stored_id != client.id);
-                                return false;
+                                let id_storage = self.id_storage.lock();
+                                match id_storage {
+                                    Ok(mut id_storage) => {
+                                        id_storage.retain(|&stored_id| stored_id != client.id);
+                                        return false;
+                                    },
+                                    Err(_) => eprintln!("Could not open ID Storage"),
+                                }
                             }
                         }
                         true
@@ -223,7 +228,7 @@ impl EventServer{
         loop {
             tick.tick().await;
             self.remove_stale_clients();
-            self.send_to_all_channels("heartbeat", "update");
+            self.send_to_all_channels("heartbeat", "");
         }
     }
 
@@ -243,7 +248,7 @@ impl EventServer{
     }
 
     pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
-        let channel = req.uri().path().rsplit("/").last().expect("Could not get Channel Path");
+        let channel = req.uri().path().split("/").last().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
         match result {

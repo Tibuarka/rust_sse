@@ -20,6 +20,7 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], 8082));
     axum::Server::bind(&addr).serve(app.into_make_service()).await.expect("Failed starting the server");
 }
+
 async fn event_handler(req: Request<Body>) -> Response<Body> {
     SSE.create_stream(req)
 }

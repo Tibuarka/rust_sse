@@ -14,7 +14,7 @@ async fn main() {
         });
 
     // Moves the request to the SSE handler
-    let app = Router::new().route("/event/:event",get({ move |req| event_handler(req) }));
+    let app = Router::new().route("/event/:event",get( move |req| event_handler(req) ));
 
     // Start the server on port 8082
     let addr = SocketAddr::from(([127, 0, 0, 1], 8082));

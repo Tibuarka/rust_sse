@@ -1,5 +1,5 @@
 //! Minimalist Server-Sent Event Library\
-//! This library is intended to be used with warp as the examples will show.\
+//! This library is intended to be used with axum as the examples will show.\
 //! This crate will not be maintained and the source code can be found on GitHub: <https://github.com/Tibuarka/rust_sse>
 // Test
 use hyper::body::{Sender, Bytes};
@@ -98,7 +98,7 @@ impl EventServer{
             Ok(mut channels) => {
                 channels.insert(channel.to_owned(), Vec::new());
             }
-            Err(_) => { eprintln!("Could not open channel lock"); }
+            Err(_) => { eprintln!("Could not lock channels"); }
         }
     }
 
@@ -141,7 +141,7 @@ impl EventServer{
                 }
                 Ok(true)
             }
-            Err(_) => { return Err("Could not open channel lock") }
+            Err(_) => { return Err("Could not lock channels") }
         }
     }
 
@@ -163,7 +163,7 @@ impl EventServer{
                     None => {}
                 };
             }
-            Err(_) => { eprintln!("Could not open channel lock"); }
+            Err(_) => { eprintln!("Could not lock channels"); }
         }
     }
 
@@ -179,7 +179,7 @@ impl EventServer{
                     self.send_to_channel(&channel, event, message);
                 }
             }
-            Err(_) => { eprintln!("Could not get channels"); }
+            Err(_) => { eprintln!("Could not get a list of channels"); }
         }
     }
 
@@ -191,7 +191,7 @@ impl EventServer{
                 drop(channel_mutex);
                 Ok(channel_vector)
             },
-            Err(_) => { return Err("Could not open channel lock") }
+            Err(_) => { return Err("Could not lock channels") }
         }
     }
 
@@ -209,7 +209,7 @@ impl EventServer{
                                         id_storage.retain(|&stored_id| stored_id != client.id);
                                         return false;
                                     },
-                                    Err(_) => eprintln!("Could not open ID Storage"),
+                                    Err(_) => eprintln!("Could not lock ID storage"),
                                 }
                             }
                         }
@@ -217,7 +217,7 @@ impl EventServer{
                     })
                 }
             },
-            Err(_) => { eprintln!("Could not open channel lock"); },
+            Err(_) => { eprintln!("Could not lock channels"); },
         }
     }
     /// Regular maintenance of Clients based on a specified interval
@@ -243,7 +243,7 @@ impl EventServer{
                 id_storage.push(lowest);
                 lowest
             },
-            Err(_) => { eprintln!("Could not open ID storage"); return 0 /* 0 is synonymous with an error as the lowest id there can be is 1 */ },
+            Err(_) => { eprintln!("Could not lock ID storage"); return 0 /* 0 is synonymous with an error as the lowest id there can be is 1 */ },
         }
     }
 

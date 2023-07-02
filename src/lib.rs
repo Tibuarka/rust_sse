@@ -183,11 +183,11 @@ impl EventServer{
         }
     }
 
-    fn get_channels(&self) -> Result<Vec<String>, &str> {
+    pub fn get_channels(&self) -> Result<Vec<String>, &str> {
         let channel_mutex = self.channels.lock();
         match channel_mutex {
             Ok(channel_mutex) => {
-                let channel_vector: Vec<String> = channel_mutex.keys().map(|ch| ch.to_owned()).collect();
+                let channel_vector: Vec<String> = channel_mutex.keys().map(|channel| channel.to_owned()).collect();
                 drop(channel_mutex);
                 Ok(channel_vector)
             },

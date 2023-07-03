@@ -106,40 +106,39 @@ impl EventServer{
     /// # Arguments
     // * `channel` - the channel of the EventSource
     // * `sender` - the Sender struct from hyper
-    fn add_client(&self, channel: &str, sender: Sender) -> Result<bool, &str>{
+    fn add_client(&self, channel: &str, sender: Sender) -> Result<(), &str>{
         let channels = self.channels.lock();
         match channels {
             Ok(mut channels) => {
                 if !channels.contains_key(channel) {
                     return Err("Channel nonexistent")
                 }
-
-                let client_id = self.assign_id();
-                if client_id == 0 {
-                    return Err("Could not assign ID to Client");
-                }
-                
-                match channels.entry(channel.to_owned()) {
-                    Entry::Occupied(mut e) => {
-                        e.get_mut().push(
-                            Client{
-                                sender,
-                                id: client_id,
-                                first_error: None
+                match self.assign_id() {
+                    Ok(client_id) => {
+                        match channels.entry(channel.to_owned()) {
+                            Entry::Occupied(mut e) => {
+                                e.get_mut().push(
+                                    Client{
+                                        sender,
+                                        id: client_id,
+                                        first_error: None
+                                    }
+                                )
                             }
-                        )
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(Vec::new()).push(
-                            Client{
-                                sender,
-                                id: client_id,
-                                first_error: None
+                            Entry::Vacant(e) => {
+                                e.insert(Vec::new()).push(
+                                    Client{
+                                        sender,
+                                        id: client_id,
+                                        first_error: None
+                                    }
+                                )
                             }
-                        )
-                    }
+                        }
+                        Ok(())
+                    },
+                    Err(e) => return Err(e),
                 }
-                Ok(true)
             }
             Err(_) => { return Err("Could not lock channels") }
         }
@@ -232,7 +231,7 @@ impl EventServer{
         }
     }
 
-    fn assign_id(&self) -> i32{
+    fn assign_id(&self) -> Result<i32, &str>{
         let mut lowest = 1;
         let id_storage = self.id_storage.lock();
         match id_storage {
@@ -241,9 +240,11 @@ impl EventServer{
                     lowest += 1;
                 }
                 id_storage.push(lowest);
-                lowest
+                Ok(lowest)
             },
-            Err(_) => { eprintln!("Could not lock ID storage"); return 0 /* 0 is synonymous with an error as the lowest id there can be is 1 */ },
+            Err(_) => {
+                return Err("Could not lock ID storage")
+            },
         }
     }
 

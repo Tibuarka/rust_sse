@@ -3,8 +3,7 @@
 //! This crate will not be maintained and the source code can be found on GitHub: <https://github.com/Tibuarka/rust_sse>
 // Test
 use hyper::body::{Sender, Bytes};
-use hyper::server::conn::AddrStream;
-use hyper::service::{service_fn, make_service_fn};
+use hyper::service::service_fn;
 use hyper::{Body, Request, Response, Server, StatusCode};
 use tokio::time::interval;
 use std::collections::HashMap;
@@ -76,7 +75,7 @@ impl EventServer{
     pub async fn spawn(&'static self, port: u16){
         // Binds the specified port to a socket address
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
-        let sse_handler = make_service_fn(|_socket: &AddrStream| {
+        let sse_handler = service_fn(|_| {
             async move {
                 Ok::<_,Infallible>(service_fn(move |req: Request<Body>| async move {
                     Ok::<_,Infallible>(self.create_stream(req))

@@ -249,17 +249,23 @@ impl EventServer{
     }
 
     pub fn create_stream(&self, req: Request<Body>) -> Response<Body>{
-        let channel = req.uri().path().split("/").last().expect("Could not get Channel Path");
+        let uri = req.uri().path().split("/").collect::<Vec<&str>>()[1..].to_vec();
+
+        let error_response = Response::builder().status(StatusCode::BAD_REQUEST).body(Body::empty()).expect("Could not create response");
+        
+        if uri[0] != "sse" {
+            eprintln!("Create_Stream threw an Error: invalid event uri string beginning.");
+            return error_response;
+        }
+
+        let channel = uri.last().expect("Could not get Channel Path");
         let (sender, body) = Body::channel();
         let result = self.add_client(channel, sender);
         match result {
             Ok(_) => {},
             Err(err) => {
                 eprintln!("Create_Stream threw an Error: {:?}", err);
-                return Response::builder()
-                        .status(StatusCode::BAD_REQUEST)
-                        .body(Body::empty())
-                        .expect("Could not create response");
+                return error_response;
             }
         }
 
